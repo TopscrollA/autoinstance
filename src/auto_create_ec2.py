@@ -2,12 +2,26 @@ import boto3
 import os
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
 load_dotenv()
 
+# Define the environments
 environments = os.getenv("environments", "dev,qa,prod").split(',')
 
 def deploy_ec2_instances():
     ec2 = boto3.resource('ec2')
+    ec2_client = boto3.client('ec2')
+    
+    # Get available availability zones
+    response = ec2_client.describe_availability_zones()
+    available_zones = [zone['ZoneName'] for zone in response['AvailabilityZones']]
+    
+    # Assign zones to environments
+    zone_mapping = {
+        'dev': available_zones[0],
+        'qa': available_zones[1],
+        'prod': available_zones[2]
+    }
     
     instances = []
     for env in environments:
@@ -23,6 +37,9 @@ def deploy_ec2_instances():
                 InstanceType='t2.micro',
                 KeyName=os.getenv("KeyName"),
                 SecurityGroupIds=[security_group],
+                Placement={
+                    'AvailabilityZone': zone_mapping[env]
+                },
                 TagSpecifications=[
                     {
                         'ResourceType': 'instance',
@@ -34,7 +51,7 @@ def deploy_ec2_instances():
                 ]
             )[0]
             instances.append(instance)
-            print(f"Launched {env.upper()} EC2 instance with ID: {instance.id}")
+            print(f"Launched {env.upper()} EC2 instance with ID: {instance.id} in zone: {zone_mapping[env]}")
         except Exception as e:
             print(f"Error launching {env.upper()} EC2 instance: {str(e)}")
     
