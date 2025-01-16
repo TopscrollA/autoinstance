@@ -23,7 +23,7 @@ def terminate_ec2_instances():
         for instance in instances:
             try:
                 instance.terminate()
-                print(f"Terminating {env.upper()} EC2 instance with ID: {instance.id}")
+                print(f"Terminated {env.upper()} EC2 instance with ID: {instance.id}")
             except Exception as e:
                 print(f"Error terminating {env.upper()} EC2 instance {instance.id}: {str(e)}")
 
